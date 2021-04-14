@@ -12,6 +12,7 @@ from nexus_constructor.common_attrs import (
     TransformationType,
 )
 from nexus_constructor.model.dataset import Dataset
+from nexus_constructor.model.stream import StreamGroup
 from nexus_constructor.model.value_type import ValueTypes
 
 if TYPE_CHECKING:
@@ -164,26 +165,28 @@ class Transformation(Dataset):
 
     def as_dict(self) -> Dict[str, Any]:
         value = None
+        return_dict: Dict = {}
         if isinstance(self.values, Dataset):
             if np.isscalar(self.values.values):
-                val: "ValueType" = self.values.values
-                value = float(val)
+                value = float(self.values.values)  # type: ignore
+            return_dict = {
+                CommonKeys.NAME: self.name,
+                CommonKeys.TYPE: NodeType.DATASET,
+                CommonKeys.VALUES: value if value is not None else [],
+                CommonKeys.DATASET: {
+                    CommonKeys.TYPE: self.type,
+                    CommonKeys.SIZE: self.size,
+                },
+            }
+        elif isinstance(self.values, StreamGroup):
+            return_dict = self.values.as_dict()["children"][0]
 
-        # TODO elif array, NXlog, kafka stream, ...
-
-        return_dict: Dict = {
-            CommonKeys.NAME: self.name,
-            CommonKeys.TYPE: NodeType.DATASET,
-            CommonKeys.VALUES: value if value is not None else [],
-            CommonKeys.DATASET: {
-                CommonKeys.TYPE: self.type,
-                CommonKeys.SIZE: self.size,
-            },
-        }
-        if self.attributes:
+        # TODO elif array, NXlog,
+        _attributes = self.attributes + self.values.attributes  # type: ignore
+        if _attributes:
             return_dict[CommonKeys.ATTRIBUTES] = [
                 attribute.as_dict()
-                for attribute in self.attributes
+                for attribute in _attributes
                 if attribute.name != CommonAttrs.DEPENDS_ON
             ]
             try:
