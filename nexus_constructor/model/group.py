@@ -30,7 +30,7 @@ class Group:
 
     name = attr.ib(type=str)
     parent_node = attr.ib(type="Group", default=None)
-    children: List[Union[Dataset, Link, "StreamGroup"]] = attr.ib(
+    children: List[Union[Dataset, Link, "StreamGroup"]] = attr.ib(  # noqa: F821
         factory=list, init=False
     )
     attributes = attr.ib(type=Attributes, factory=Attributes, init=False)
@@ -40,7 +40,9 @@ class Group:
         return _get_item(self.children, key)
 
     def __setitem__(
-        self, key: str, value: Union["Group", Dataset, Link],
+        self,
+        key: str,
+        value: Union["Group", Dataset, Link],
     ):
         try:
             value.parent_node = self
